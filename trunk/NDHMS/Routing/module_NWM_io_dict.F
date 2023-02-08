@@ -1262,7 +1262,7 @@ subroutine initLdasDict(ldasOutDict,procId,diagFlag)
                             1,1,1,1,1,1,1,1,1,1, &  !71-80
                             1,1,1,1,1,1,1,1,1,1, &  !81-90
                             1,1,1,1,1,2,2,1,1,1, &  !91-100
-                            1,10,10,1]                !101-104 (numLakeLayers = 10)
+                            1,10,10,10]                !101-104 (numLakeLayers = 10)
    ldasOutDict%missingReal(:) = [-9999.0,-9999.0,-9999.0,-9999.0,-9999.0, & !1-5
                                  -9999.0,-9999.0,-9999.0,-9999.0,-9999.0, & !6-10
                                  -9999.0,-9999.0,-9999.0,-9999.0,-9999.0, & !11-15
@@ -1347,6 +1347,13 @@ subroutine initLdasDict(ldasOutDict,procId,diagFlag)
                                  30000.0d0, 1.0d0, 1.0d0, 1.0d0, 400.0d0, &             !91-95
                                  1.0d0, 1.0d0, 100.0d0, 10000.0d0, 10000.0d0,  &          !96-100
                                  2000.0d0, 400.0d0, 1.0d0,2000.0d0]                     !101-104
+   
+   ! Set WRF-Lake layers
+#ifndef EXTRALAKELAYERS
+   ldasOutDict%numLev(102:104) = 10
+#else
+   ldasOutDict%numLev(102:104) = 25
+#endif
    ! Loop through and calculate missing/fill/min/max values that will be placed
    ! into the NetCDF attributes after scale_factor/add_offset are applied.
    do i=1,numLdasVars
