@@ -176,7 +176,7 @@ MODULE module_sf_lake
     INTEGER,        DIMENSION( ims:ime, jms:jme )         ,INTENT(INOUT)  :: IVGTYP
     REAL,                                                  INTENT(IN)  :: dtbl
     
-    REAL,           DIMENSION( ims:ime,1:nlevlake,jms:jme ),INTENT(IN)  :: z_lake3d
+!    REAL,           DIMENSION( ims:ime,1:nlevlake,jms:jme ),INTENT(IN)  :: z_lake3d
     REAL,           DIMENSION( ims:ime,1:nlevlake,jms:jme ),INTENT(IN)  :: dz_lake3d
     REAL,           DIMENSION( ims:ime,1:nlevsoil,jms:jme ),INTENT(IN)  :: watsat3d
     REAL,           DIMENSION( ims:ime,1:nlevsoil,jms:jme ),INTENT(IN)  :: csol3d
@@ -205,6 +205,7 @@ MODULE module_sf_lake
                                                                                   snl2d,          &    
                                                                                   t_grnd2d
     
+	real,    dimension( ims:ime,1:nlevlake,jms:jme )			,INTENT(inout)  :: z_lake3d
     real,    dimension( ims:ime,1:nlevlake, jms:jme )           ,INTENT(inout)  :: t_lake3d,       &    
                                                                                   lake_icefrac3d
     real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme )  ,INTENT(inout)  :: t_soisno3d,     &    
@@ -397,6 +398,7 @@ MODULE module_sf_lake
             t_grnd2d(i,j)            = t_grnd(c)
             do k = 1,nlevlake
                t_lake3d(i,k,j)       = t_lake(c,k)
+			   z_lake3d(i,k,j)       = z_lake(c,k)
                lake_icefrac3d(i,k,j) = lake_icefrac(c,k)
             enddo
 	    do k = -nlevsnow+1,nlevsoil
@@ -451,7 +453,7 @@ MODULE module_sf_lake
     real(r8),intent(in) :: prec(1)               ! snow or rain rate [mm/s]
     real(r8),intent(in) :: sabg(1)            ! solar radiation absorbed by ground (W/m**2)
     real(r8),intent(in) :: lat(1)             ! latitude (radians)
-    real(r8),intent(in) :: z_lake(1,nlevlake)  ! layer depth for lake (m)
+!    real(r8),intent(in) :: z_lake(1,nlevlake)  ! layer depth for lake (m)
     real(r8),intent(in) :: dz_lake(1,nlevlake)                  ! layer thickness for lake (m)
 
     real(r8), intent(in) :: lakedepth(1)       ! column lake depth (m)
@@ -471,6 +473,7 @@ MODULE module_sf_lake
     real(r8),intent(inout) :: dz(1,-nlevsnow+1:nlevsoil)            ! layer thickness for soil or snow (m)
     real(r8),intent(inout) :: t_soisno(1,-nlevsnow+1:nlevsoil)      ! soil (or snow) temperature (Kelvin)
     real(r8),intent(inout) :: t_lake(1,nlevlake)                   ! lake temperature (Kelvin)
+	real(r8),intent(inout) :: z_lake(1,nlevlake)  ! layer depth for lake (m)
     integer ,intent(inout) :: snl(1)                              ! number of snow layers
     real(r8),intent(inout) :: h2osoi_liq(1,-nlevsnow+1:nlevsoil)    ! liquid water (kg/m2)
     real(r8),intent(inout) :: h2osoi_ice(1,-nlevsnow+1:nlevsoil)    ! ice lens (kg/m2)
@@ -1502,6 +1505,8 @@ SUBROUTINE ShalLakeTemperature(t_grnd,h2osno,sabg,dz,dz_lake,z,zi,           & !
              kme(c,j) = km
              tk_lake(c,j) = tkwat*tkice_eff / ( (1._r8-lake_icefrac(c,j))*tkice_eff &
                             + tkwat*lake_icefrac(c,j) )
+			 !tk_lake(c,j) = tkwat*tkice_eff*0.7 / ( (1._r8-lake_icefrac(c,j))*tkice_eff*0.7 &
+              !              + tkwat*lake_icefrac(c,j) )
              ! Assume the resistances add as for the calculation of conductivities at layer interfaces.
           end if
        end do
@@ -1621,12 +1626,12 @@ SUBROUTINE ShalLakeTemperature(t_grnd,h2osno,sabg,dz,dz_lake,z,zi,           & !
              end if
              t_soisno_bef(c,j) = t_soisno(c,j)
 
-             if(abs(t_soisno(c,j)-273) > 200)   then ! condition was originally (abs(t_soisno(c,j)-288) > 150)
-                WRITE( message,* ) 'WARNING: Extreme t_soisno at c, level',c, j
-                WRITE( message,* ) 't_soisno at c, level = ',c, j, t_soisno(c,j)
+!            if(abs(t_soisno(c,j)-273) > 200)   then ! condition was originally (abs(t_soisno(c,j)-288) > 150)
+!                WRITE( message,* ) 'WARNING: Extreme t_soisno at c, level',c, j
+!                WRITE( message,* ) 't_soisno at c, level = ',c, j, t_soisno(c,j)
 
-                CALL wrf_error_fatal ( message )
-             endif
+!                CALL wrf_error_fatal ( message )
+!             endif
           end if
        end do
     end do
@@ -5147,6 +5152,7 @@ end subroutine LakeDebug
 !  zlak(8) = 25.6_r8
 !  zlak(9) = 34.325_r8
 !  zlak(10)= 44.775_r8
+!
   dzlak(1) = 0.1_r8
   dzlak(2) = 0.1_r8
   dzlak(3) = 0.1_r8
@@ -5157,17 +5163,28 @@ end subroutine LakeDebug
   dzlak(8) = 0.1_r8
   dzlak(9) = 0.1_r8
   dzlak(10)= 0.1_r8
- 
-  zlak(1) =  0.05_r8
-  zlak(2) =  0.15_r8
-  zlak(3) =  0.25_r8
-  zlak(4) =  0.35_r8
-  zlak(5) =  0.45_r8
-  zlak(6) = 0.55_r8
-  zlak(7) = 0.65_r8
-  zlak(8) = 0.75_r8
-  zlak(9) = 0.85_r8
-  zlak(10)= 0.95_r8
+!
+!  zlak(1) =  0.05_r8
+!  zlak(2) =  0.15_r8
+!  zlak(3) =  0.25_r8
+!  zlak(4) =  0.35_r8
+!  zlak(5) =  0.45_r8
+!  zlak(6) = 0.55_r8
+!  zlak(7) = 0.65_r8
+!  zlak(8) = 0.75_r8
+!  zlak(9) = 0.85_r8
+!  zlak(10)= 0.95_r8
+!
+  dzlak(1) = 0.1_r8
+  dzlak(2) = 0.1_r8
+  dzlak(3) = 0.1_r8
+  dzlak(4) = 0.1_r8
+  dzlak(5) = 1_r8
+  dzlak(6) = 2_r8
+  dzlak(7) = 3_r8
+  dzlak(8) = 4_r8
+  dzlak(9) = 5_r8
+  dzlak(10)= 7.1_r8
 #else
   dzlak(1) =0.1_r8
   dzlak(2) =0.25_r8
@@ -5194,13 +5211,13 @@ end subroutine LakeDebug
   dzlak(23) =5.225_r8
   dzlak(24) =5.225_r8
   dzlak(25) =5.225_r8
+#endif
 
   zlak(1) = dzlak(1)/2._r8
   do k = 2,nlevlake
      zlak(k) = zlak(k-1) + (dzlak(k-1)+dzlak(k))/2._r8
   end do
-#endif
-
+!#endif
    ! "0" refers to soil surface and "nlevsoil" refers to the bottom of model soil
 
    do j = 1, nlevsoil
@@ -5257,7 +5274,7 @@ end subroutine LakeDebug
             watdry3d(i,k,j) = watsat3d(i,k,j) * (316230._r8/sucsat3d(i,k,j)) ** (-1._r8/bsw3d(i,k,j))
             watopt3d(i,k,j) = watsat3d(i,k,j) * (158490._r8/sucsat3d(i,k,j)) ** (-1._r8/bsw3d(i,k,j))
          end do
-         if (lakedepth2d(i,j) == spval) then
+		 if (lakedepth2d(i,j) == spval) then
             lakedepth2d(i,j) = zlak(nlevlake) + 0.5_r8*dzlak(nlevlake)
             z_lake3d(i,1:nlevlake,j) = zlak(1:nlevlake)
             dz_lake3d(i,1:nlevlake,j) = dzlak(1:nlevlake)
@@ -5267,7 +5284,8 @@ end subroutine LakeDebug
             dz_lake3d(i,1,j) = dzlak(1)
             dz_lake3d(i,2:nlevlake,j) = dzlak(2:nlevlake)*depthratio2d(i,j)
             z_lake3d(i,2:nlevlake,j) = zlak(2:nlevlake)*depthratio2d(i,j) + dz_lake3d(i,1,j)*(1._r8 - depthratio2d(i,j))
-         end if
+        
+		 end if
 ! initial t_lake3d here
         t_soisno3d(i,1,j)      = tsk(i,j)
         t_lake3d(i,1,j)        = tsk(i,j)
@@ -5596,6 +5614,7 @@ end subroutine LakeDebug
 !  zlak(8) = 25.6_r8
 !  zlak(9) = 34.325_r8
 !  zlak(10)= 44.775_r8
+
   dzlak(1) = 0.1_r8
   dzlak(2) = 0.1_r8
   dzlak(3) = 0.1_r8
@@ -5607,16 +5626,28 @@ end subroutine LakeDebug
   dzlak(9) = 0.1_r8
   dzlak(10)= 0.1_r8
 
-  zlak(1) =  0.05_r8
-  zlak(2) =  0.15_r8
-  zlak(3) =  0.25_r8
-  zlak(4) =  0.35_r8
-  zlak(5) =  0.45_r8
-  zlak(6) = 0.55_r8
-  zlak(7) = 0.65_r8
-  zlak(8) = 0.75_r8
-  zlak(9) = 0.85_r8
-  zlak(10)= 0.95_r8
+!  zlak(1) =  0.05_r8
+!  zlak(2) =  0.15_r8
+!  zlak(3) =  0.25_r8
+!  zlak(4) =  0.35_r8
+!  zlak(5) =  0.45_r8
+!  zlak(6) = 0.55_r8
+!  zlak(7) = 0.65_r8
+!  zlak(8) = 0.75_r8
+!  zlak(9) = 0.85_r8
+!  zlak(10)= 0.95_r8
+  
+  dzlak(1) = 0.1_r8
+  dzlak(2) = 0.1_r8
+  dzlak(3) = 0.1_r8
+  dzlak(4) = 0.1_r8
+  dzlak(5) = 1_r8
+  dzlak(6) = 2_r8
+  dzlak(7) = 3_r8
+  dzlak(8) = 4_r8
+  dzlak(9) = 5_r8
+  dzlak(10)= 7.1_r8
+
 #else
   dzlak(1) =0.1_r8
   dzlak(2) =0.25_r8
@@ -5643,12 +5674,12 @@ end subroutine LakeDebug
   dzlak(23) =5.225_r8
   dzlak(24) =5.225_r8
   dzlak(25) =5.225_r8
-
+#endif
   zlak(1) = dzlak(1)/2._r8
   do k = 2,nlevlake
      zlak(k) = zlak(k-1) + (dzlak(k-1)+dzlak(k))/2._r8
   end do
-#endif
+!#endif
 
    ! "0" refers to soil surface and "nlevsoil" refers to the bottom of model soil
 

@@ -1594,7 +1594,7 @@ endif
                   'SNLIQ,SOIL_T,SOIL_W,SNOW_T,SOIL_M,SNOWH,SNEQV,QSNOW,ISNOW,FSNO,ACSNOW,ACSNOM,CM,CH,CHV,CHB,CHLEAF,CHUC,' // &
                   'CHV2,CHB2,LFMASS,RTMASS,STMASS,WOOD,STBLCP,FASTCP,NEE,GPP,NPP,PSN,APAR,ACCET,CANWAT,SOILICE,SOILSAT_TOP,'// &
                   'SOILSAT,SNOWT_AVG,QRAIN,'// &
-                  'LAKE_PRECIP2D,LAKE_EVAP2D,LAKE_DEPTH2D,LAKE_T3D,LAKE_ICE3D'
+                  'LAKE_PRECIP2D,LAKE_EVAP2D,LAKE_DEPTH2D,LAKE_T3D,LAKE_Z3D,LAKE_ICE3D'
    endif
    if (io_config_outputs .eq. 1) then
         VARLIST = 'SNOWH,SNEQV,FSNO,SOILSAT_TOP,SNOWT_AVG,ACCET'
@@ -1929,7 +1929,7 @@ end subroutine land_driver_ini
            ! lake_precip units converted from mm/s to m
            ! lake_evap units converted from kg/m2/s to m
            ! dtbl is time step in seconds
-           lake_dh_avg(ilake) = (lake_precip(ilake) - lake_evap(ilake)*3600.)*dtbl/3600./1000.
+           lake_dh_avg(ilake) = (lake_precip(ilake) - lake_evap(ilake)*3600.)*dtbl/3600./1000./lake_grids(ilake) !lake_grids
            where(lake_id == lake_idx) lakedepth2d = lakedepth2d + lake_dh_avg(ilake)
          end do
 
@@ -1940,6 +1940,7 @@ end subroutine land_driver_ini
          where(IVGTYP == 28) LAKEEVAPOUT = QFX * 3600.0 * dtbl / 3600.0 ! to convert from kg/m2/s to mm in the LDASOUT file
          LAKEDEPTHOUT = -9999.0
          where(IVGTYP == 28) LAKEDEPTHOUT = lakedepth2d
+		     !where(IVGTYP == 28) LAKEDEPTHOUT = lake_dh_avg
          ENDIF
  
   IF(noah_lsm%RUNOFF_OPTION.EQ.5.AND.MOD(ITIME,STEPWTD).EQ.0)THEN
@@ -2285,6 +2286,7 @@ subroutine  ldas_output(itime, state)
    call output_NoahMP_NWM(trim(noah_lsm%outdir),igrid,noah_lsm%output_timestep,itime,startdate,olddate,ixpar,jxpar,1,LAKEDEPTHOUT,IVGTYP,101)
    call output_NoahMP_NWM(trim(noah_lsm%outdir),igrid,noah_lsm%output_timestep,itime,startdate,olddate,ixpar,jxpar,nlevlake,t_lake3d,IVGTYP,102)
    call output_NoahMP_NWM(trim(noah_lsm%outdir),igrid,noah_lsm%output_timestep,itime,startdate,olddate,ixpar,jxpar,nlevlake,lake_icefrac3d,IVGTYP,103)
+   call output_NoahMP_NWM(trim(noah_lsm%outdir),igrid,noah_lsm%output_timestep,itime,startdate,olddate,ixpar,jxpar,nlevlake,z_lake3d,IVGTYP,104)
 
 #endif /* WRF_HYDRO */
 
